@@ -1,0 +1,50 @@
+###########################################################
+# Fichier définissant les containers Docker
+# docs : https://docs.docker.com/compose/compose-file/
+###########################################################
+
+# Version de docker-compose
+version: "3"
+
+services:
+    # container pour la base de donnée mysql
+    mysql:
+        # utilise l'image officiel de mysql
+        image: mysql:latest
+        # Fait pointer le volume "data" vers le dossier "/var/lib/mysql"
+        # contenant les données de la base dans le container
+        volumes:
+            - data:/var/lib/mysql
+        # Variables d'environnement
+        environment:
+            - MYSQL_DATABASE=${DB_NAME}
+            - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+
+    # container contenant apache et php
+    php-apache:
+        # construit à partir de l'image "php-apache" située au même niveau
+        build: php-apache
+        ports:
+            - "80:80"
+        depends_on:
+            - mysql
+        # Fait pointer le répertoire /var/www de la machine (contenant les
+        # sources) vers la racine définie dans apache
+        volumes:
+        - ${PROJECT_ROOT}:/var/www/html
+
+    # container pour phpmyadmin
+    phpmyadmin:
+        # utilise l'image officiel de phpmyadmin
+        image: phpmyadmin/phpmyadmin:latest
+        ports:
+            - 8080:80
+        depends_on:
+            - mysql
+        environment:
+            - PMA_HOST=mysql
+
+volumes:
+    # volume persistant (n'est pas détruit avec les containers) utilisé par
+    # mysql pour stocker les données
+    data:
